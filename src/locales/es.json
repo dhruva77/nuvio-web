@@ -18,6 +18,7 @@
   "boot.loading": "Cargando Nuvio…",
   "boot.restoring": "Restaurando Nuvio…",
   "calendar.noReleases": "Sin estrenos este día",
+  "catalog.moreFailed": "No se pudieron cargar más títulos.",
   "common.backToSettings": "Volver a ajustes",
   "common.default": "Predeterminado",
   "common.dismiss": "Descartar",

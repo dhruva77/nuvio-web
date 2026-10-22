@@ -18,6 +18,7 @@
   "boot.loading": "Nuvio wird geladen…",
   "boot.restoring": "Nuvio wird wiederhergestellt …",
   "calendar.noReleases": "An diesem Tag keine Veröffentlichungen",
+  "catalog.moreFailed": "Weitere Titel konnten nicht geladen werden.",
   "common.backToSettings": "Zurück zu den Einstellungen",
   "common.default": "Standard",
   "common.dismiss": "Ausblenden",

@@ -18,6 +18,7 @@
   "boot.loading": "Nuvio を読み込んでいます…",
   "boot.restoring": "Nuvio を復元しています…",
   "calendar.noReleases": "この日のリリースはありません",
+  "catalog.moreFailed": "これ以上タイトルを読み込めませんでした。",
   "common.backToSettings": "設定に戻る",
   "common.default": "デフォルト",
   "common.dismiss": "閉じる",

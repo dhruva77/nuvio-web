@@ -18,6 +18,7 @@
   "boot.loading": "Loading Nuvio…",
   "boot.restoring": "Restoring Nuvio…",
   "calendar.noReleases": "No releases this day",
+  "catalog.moreFailed": "Couldn't load more titles.",
   "common.backToSettings": "Back to settings",
   "common.default": "Default",
   "common.dismiss": "Dismiss",

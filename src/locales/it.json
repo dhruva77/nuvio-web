@@ -18,6 +18,7 @@
   "boot.loading": "Caricamento di Nuvio…",
   "boot.restoring": "Ripristino di Nuvio…",
   "calendar.noReleases": "Nessuna uscita in questo giorno",
+  "catalog.moreFailed": "Impossibile caricare altri titoli.",
   "common.backToSettings": "Torna alle impostazioni",
   "common.default": "Predefinito",
   "common.dismiss": "Ignora",

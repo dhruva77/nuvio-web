@@ -5751,6 +5751,45 @@ body.is-locked {
   color: #8d97a2;
   font-size: 13px;
 }
+/* The next page could not be loaded: what happened, and a way to try again,
+   where the scroll stopped. */
+.grid-more-failed {
+  gap: 16px;
+  text-align: left;
+}
+.grid-more-failed span {
+  display: grid;
+  gap: 2px;
+}
+.grid-more-failed strong {
+  color: #e8ebef;
+  font-weight: 650;
+}
+.grid-more-failed small {
+  color: #8d97a2;
+  font-size: 12px;
+}
+.grid-more-failed button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--panel-border, #232930);
+  border-radius: 12px;
+  color: #f7f8fa;
+  background: var(--panel-soft, #12161b);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.grid-more-failed button:hover {
+  border-color: var(--accent, #ef3d50);
+}
+.grid-more-failed button svg {
+  width: 16px;
+  height: 16px;
+}
 .mini-spinner {
   width: 17px;
   height: 17px;

@@ -169,6 +169,8 @@ import {
   type ContinueCard,
 } from "./lib/progress";
 import { tallyWatched } from "./lib/libraryStats";
+import { useCatalogPaging } from "./lib/useCatalogPaging";
+import { PagingStatus } from "./components/PagingStatus";
 import { useProgressiveList } from "./lib/useProgressiveList";
 import { useScrollLock } from "./lib/useScrollLock";
 import { ContinueLoadingOverlay } from "./components/ContinueLoadingOverlay";
@@ -3704,55 +3706,22 @@ function CatalogView({
   onOpen(item: Meta): void;
   onMenu(item: Meta, x: number, y: number): void;
 }) {
-  const [items, setItems] = useState<Meta[]>(section.items);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [exhausted, setExhausted] = useState(false);
-  const [error, setError] = useState("");
-  const sentinel = useRef<HTMLDivElement | null>(null);
-
+  // Starts from the whole first page the home row was cut from, and asks for
+  // page two from where the addon's first page actually ended.
+  const start = (from: CatalogSection) => ({
+    items: from.page ?? from.items,
+    offset: from.fetched ?? from.items.length,
+    more: true,
+  });
+  const paging = useCatalogPaging({
+    loadPage: (offset) => loadCatalog(section, offset),
+    initial: start(section),
+  });
+  const { items, reset } = paging;
+  const firstSection = useRef(section);
   useEffect(() => {
-    setItems(section.items);
-    setExhausted(false);
-    setError("");
-  }, [section]);
-
-  const more = useCallback(async () => {
-    if (loadingMore || exhausted) return;
-    setLoadingMore(true);
-    try {
-      const next = await loadCatalog(section, items.length);
-      // Addons that ignore `skip` return the same page forever, so anything
-      // that adds no new ids ends the run rather than looping.
-      const known = new Set(items.map((item) => `${item.type}:${item.id}`));
-      const additions = next.filter(
-        (item) => !known.has(`${item.type}:${item.id}`),
-      );
-      if (additions.length === 0) setExhausted(true);
-      else setItems((current) => [...current, ...additions]);
-    } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : "Could not load more",
-      );
-      setExhausted(true);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [exhausted, items, loadingMore, section]);
-
-  // Infinite scroll rather than a button: the sentinel sits below the grid and
-  // fetches the next page as it comes into view.
-  useEffect(() => {
-    const node = sentinel.current;
-    if (!node || exhausted) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) more();
-      },
-      { rootMargin: "600px" },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [more, exhausted]);
+    if (section !== firstSection.current) reset(start(section));
+  }, [section, reset]);
 
   const { visible } = useProgressiveList(items, { resetKey: section.key });
   return (
@@ -3775,7 +3744,6 @@ function CatalogView({
           </p>
         </div>
       </div>
-      {error && <div className="notice error">{error}</div>}
       <div className="poster-grid">
         {visible.map((item) => (
           <PosterCard
@@ -3787,13 +3755,12 @@ function CatalogView({
           />
         ))}
       </div>
-      {!exhausted && <div ref={sentinel} className="grid-sentinel" />}
-      {loadingMore && (
-        <div className="grid-more" role="status">
-          <i className="mini-spinner" />
-          {t("common.loadingMore")}
-        </div>
-      )}
+      {!paging.exhausted && <div ref={paging.sentinel} className="grid-sentinel" />}
+      <PagingStatus
+        loading={paging.loadingMore}
+        failure={paging.failure}
+        onRetry={paging.retry}
+      />
     </section>
   );
 }

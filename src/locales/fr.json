@@ -18,6 +18,7 @@
   "boot.loading": "Chargement de Nuvio…",
   "boot.restoring": "Restauration de Nuvio…",
   "calendar.noReleases": "Aucune sortie ce jour",
+  "catalog.moreFailed": "Impossible de charger plus de titres.",
   "common.backToSettings": "Retour aux réglages",
   "common.default": "Par défaut",
   "common.dismiss": "Ignorer",

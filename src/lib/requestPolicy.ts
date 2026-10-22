@@ -31,6 +31,22 @@ export function isRetryable(status: number): boolean {
 }
 
 /**
+ * Whether a failed addon request is worth another go.
+ *
+ * A 429 or 503 says so outright. So, in a browser, does a request it reports
+ * as blocked: rate limiters and timed-out gateways often answer without the
+ * CORS header, and that 429 or 504 then arrives with no status at all. An
+ * addon that truly never sends CORS fails the same way twice more, a second
+ * or so later, which costs little next to giving up on a host that only
+ * asked us to slow down.
+ */
+export function shouldRetry(error: unknown): boolean {
+  const failure = error as { status?: number; blocked?: boolean } | null;
+  if (failure?.blocked === true) return true;
+  return typeof failure?.status === "number" && isRetryable(failure.status);
+}
+
+/**
  * How long to wait before trying again.
  *
  * `Retry-After` is authoritative when the host sends one, in either of the two

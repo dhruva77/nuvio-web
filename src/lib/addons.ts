@@ -2,8 +2,8 @@ import { resolveTmdbSource } from "./tmdbCollections";
 import {
   createHostLimiter,
   hostKey,
-  isRetryable,
   retryAfterMs,
+  shouldRetry,
   runPool,
   MAX_RETRIES,
 } from "./requestPolicy.ts";
@@ -122,13 +122,7 @@ async function fetchJson<T>(
         return value;
       } catch (error) {
         finish?.("error");
-        const status = (error as { status?: number }).status;
-        if (
-          attempt >= MAX_RETRIES ||
-          status === undefined ||
-          !isRetryable(status) ||
-          signal?.aborted
-        )
+        if (attempt >= MAX_RETRIES || !shouldRetry(error) || signal?.aborted)
           throw error;
         // The host asked for later, so wait the time it named rather than
         // trying again straight away and earning another 429.
@@ -537,6 +531,12 @@ export async function loadHome(
       }>(catalogUrl, HOME_CATALOG_TIMEOUT_MS);
       const prefKey = `${addon.manifest!.id}:${catalog.type}:${catalog.id}`;
       const base = catalog.name || catalog.id;
+      const page = (payload.metas ?? [])
+        .map((meta) => mapMeta(meta, addon.url, addon.manifest!.name))
+        .filter(
+          (meta) =>
+            layout?.hideUnreleasedContent !== true || !isKnownFutureRelease(meta),
+        );
       const section = {
         key: prefKey,
         // A row renamed in Nuvio wins outright; otherwise the type suffix
@@ -550,13 +550,9 @@ export async function loadHome(
         manifestUrl: addon.url,
         addonName: addon.manifest!.name,
         catalogId: catalog.id,
-        items: (payload.metas ?? [])
-          .map((meta) => mapMeta(meta, addon.url, addon.manifest!.name))
-          .filter(
-            (meta) =>
-              layout?.hideUnreleasedContent !== true || !isKnownFutureRelease(meta),
-          )
-          .slice(0, 24),
+        items: page.slice(0, 24),
+        page,
+        fetched: payload.metas?.length ?? 0,
       } satisfies CatalogSection;
       if (!section.items.length) return;
       sections.push(section);
