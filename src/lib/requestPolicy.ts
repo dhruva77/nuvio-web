@@ -115,6 +115,55 @@ export async function runPool<T>(
   );
 }
 
+/** The first wait after a host refuses; it doubles while refusals continue. */
+export const COOLDOWN_BASE_MS = 2_000;
+
+export type HostCooldown = {
+  /** How long a request to this host should wait before starting. */
+  delayFor(url: string): number;
+  /** The host refused (429, or a browser-blocked request). */
+  strike(url: string, retryAfter?: string | null): void;
+  /** The host answered. */
+  success(url: string): void;
+};
+
+/**
+ * One back-off per host, shared by every request to it.
+ *
+ * Each request used to back off on its own, so a host that rate limited four
+ * requests in flight got four retries a moment later, then four more — the
+ * herd that keeps a limiter shut. Now a refusal pauses the host for everyone
+ * queued behind it, and the pause grows only with refusals that arrive after
+ * it has passed; several in flight at once failing together count as one.
+ */
+export function createHostCooldown(now: () => number = Date.now): HostCooldown {
+  const hosts = new Map<string, { until: number; strikes: number }>();
+  return {
+    delayFor(url) {
+      const state = hosts.get(hostKey(url));
+      return state ? Math.max(0, state.until - now()) : 0;
+    },
+    strike(url, retryAfter) {
+      const key = hostKey(url);
+      const state = hosts.get(key) ?? { until: 0, strikes: 0 };
+      const at = now();
+      if (at < state.until) return;
+      state.strikes += 1;
+      const backoff = Math.min(COOLDOWN_BASE_MS * 2 ** (state.strikes - 1), MAX_BACKOFF_MS);
+      const asked = retryAfter ? retryAfterMs(retryAfter, 0, at) : 0;
+      state.until = at + Math.max(backoff, asked);
+      hosts.set(key, state);
+    },
+    success(url) {
+      const key = hostKey(url);
+      const state = hosts.get(key);
+      if (!state) return;
+      state.strikes = Math.max(0, state.strikes - 1);
+      if (state.strikes === 0 && state.until <= now()) hosts.delete(key);
+    },
+  };
+}
+
 export type HostLimiter = <T>(url: string, work: () => Promise<T>) => Promise<T>;
 
 /**
