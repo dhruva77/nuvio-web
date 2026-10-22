@@ -399,6 +399,20 @@ const DETAIL_SECTION_LABELS: Record<
   DETAILS: "Details",
 };
 
+
+/** The profile open in this tab, for coming back to it after a reload. */
+const SESSION_PROFILE_KEY = "nuvio-session-profile";
+
+function sessionProfile(profiles: Profile[]): Profile | undefined {
+  try {
+    const stored = sessionStorage.getItem(SESSION_PROFILE_KEY);
+    if (stored === null) return undefined;
+    return profiles.find((item) => item.profileIndex === Number(stored));
+  } catch {
+    return undefined;
+  }
+}
+
 export function App() {
   const [booting, setBooting] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
@@ -724,6 +738,16 @@ export function App() {
   const [recentSearches, setRecentSearches] = useState<string[]>(readRecentSearches);
   const [searchFocused, setSearchFocused] = useState(false);
   const activateProfile = useCallback((next: Profile | null) => {
+    // Kept for this tab's session, so a reload — an update applying, or iOS
+    // reloading a page that ran low on memory — comes back to the profile
+    // that was open rather than to the picker. Not "remember profile": that
+    // is about opening the app, and a reload is not an app open.
+    try {
+      if (next) sessionStorage.setItem(SESSION_PROFILE_KEY, String(next.profileIndex));
+      else sessionStorage.removeItem(SESSION_PROFILE_KEY);
+    } catch {
+      // Private browsing can refuse storage; the picker is the fallback.
+    }
     episodeSwitch.current += 1;
     setResolvingContinue(null);
     setProfileStarting(next !== null);
@@ -927,7 +951,10 @@ export function App() {
             (item) => item.profileIndex === bootHandoff.profileIndex,
           )
         : undefined;
-      const target = resumeProfile ?? (rememberProfileRef.current ? last : undefined);
+      const target =
+        resumeProfile ??
+        (rememberProfileRef.current ? last : undefined) ??
+        sessionProfile(nextProfiles);
       if (!autoOpenAttempted.current && target) {
         autoOpenAttempted.current = true;
         if (target.pinEnabled) setPinTarget(target);
