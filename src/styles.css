@@ -1892,6 +1892,88 @@ a {
   justify-content: center;
   gap: 10px;
 }
+/* Autoplay choosing a source: steps rather than a list, so nothing looks
+   like it is waiting to be tapped. */
+.autoplay-progress {
+  display: grid;
+  gap: 18px;
+  max-width: 420px;
+  margin: 26px auto 0;
+  padding: 0 6px;
+}
+.autoplay-progress ol {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.autoplay-progress li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: start;
+  gap: 12px;
+  transition: opacity 0.25s ease;
+}
+.autoplay-progress li.is-next {
+  opacity: 0.45;
+}
+.autoplay-progress li > span:last-child {
+  display: grid;
+  gap: 3px;
+}
+.autoplay-progress strong {
+  color: #e8ebef;
+  font-size: 15px;
+  font-weight: 650;
+}
+.autoplay-progress small {
+  color: #89939d;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.autoplay-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--panel-border, #2a3038);
+}
+.autoplay-progress li.is-done .autoplay-mark {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink, #111);
+}
+.autoplay-progress li.is-active .autoplay-mark {
+  border-color: transparent;
+}
+.autoplay-mark svg {
+  width: 15px;
+  height: 15px;
+}
+.autoplay-progress > p {
+  margin: 4px 0 0;
+  color: #b4bdc7;
+  font-size: 14px;
+  text-align: center;
+}
+.autoplay-manual {
+  justify-self: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--panel-border, #2a3038);
+  border-radius: 12px;
+  color: #c8d1db;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.autoplay-manual:hover {
+  border-color: var(--accent);
+  color: #f7f8fa;
+}
 .source-list {
   display: grid;
   gap: 12px;
@@ -3234,6 +3316,18 @@ html.native-player-active.native-player-covered .player-view.native-player {
 .player-center-busy svg {
   width: 52px;
   height: 52px;
+}
+/* The last step of autoplay's sequence, under the spinner. */
+.player-starting {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: #e8ebef;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 8px #000c;
 }
 .player-center svg {
   width: 64px;

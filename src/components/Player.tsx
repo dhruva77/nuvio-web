@@ -415,6 +415,11 @@ export function Player({
   const [nativeRefused, setNativeRefused] = useState(false);
 
   const [playing, setPlaying] = useState(false);
+  /** Whether this stream has played at all, so the first wait can be named. */
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    if (playing) setStarted(true);
+  }, [playing]);
   const playingRef = useRef(false);
   playingRef.current = playing;
   const [waiting, setWaiting] = useState(true);
@@ -2468,6 +2473,10 @@ export function Player({
       {!error && waiting && settings.showLoadingOverlay && (
         <div className="player-center player-center-busy" aria-label="Loading">
           <LoaderCircle className="spin" />
+          {/* The last of the steps the source sheet shows while autoplay
+              chooses, so the hand-off reads as one sequence. Only before the
+              first frame: a buffering pause later is not a start. */}
+          {!started && <span className="player-starting">{t("player.startingStream")}</span>}
         </div>
       )}
       {/* Paused only. A pause glyph held over a playing picture is furniture:

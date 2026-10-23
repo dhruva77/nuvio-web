@@ -1,5 +1,6 @@
 import { selectAutoStream } from "../lib/playbackPolicy";
 import { Select } from "./Select";
+import { AutoPlayProgress, type AutoPlayStage } from "./AutoPlayProgress";
 import { bingeGroupFor } from "../lib/bingeCache";
 import { matchBadges } from "../lib/badgeMatcher";
 import {
@@ -603,6 +604,18 @@ export function Details({
    */
   const sheetPlayer = defaultPlayer;
   const autoPlayTimer = useRef<number | undefined>(undefined);
+  /** Autoplay's progress while it is choosing; null once the list is shown. */
+  const [autoStage, setAutoStage] = useState<AutoPlayStage | null>(null);
+  const [autoDeadline, setAutoDeadline] = useState<number | null>(null);
+  /** Autoplay finished looking and nothing matched the rules. */
+  const [autoMissed, setAutoMissed] = useState(false);
+  /** "Choose a source myself": stops this run picking for you. */
+  const autoManual = useRef(false);
+  const chooseManually = useCallback(() => {
+    autoManual.current = true;
+    window.clearTimeout(autoPlayTimer.current);
+    setAutoStage(null);
+  }, []);
   const sourceRequest = useRef(0);
   const sourceAbort = useRef<AbortController | null>(null);
   const closeSource = useCallback(() => {
@@ -1055,15 +1068,39 @@ export function Details({
     setSourcesPending(true);
     setAnswered([]);
     setStreams([]);
+    // Autoplay picks once every addon has answered even with no timer set;
+    // the timer, when there is one, only lets it pick sooner.
+    const autoplay = !forceManual && playerSettings.autoPlayMode !== "MANUAL";
+    const timed =
+      playerSettings.autoPlayTimeoutSeconds > 0 &&
+      playerSettings.autoPlayTimeoutSeconds < 2147483647;
+    autoManual.current = false;
+    setAutoMissed(false);
+    setAutoStage(autoplay ? "finding" : null);
+    setAutoDeadline(
+      autoplay && timed
+        ? Date.now() + playerSettings.autoPlayTimeoutSeconds * 1000
+        : null,
+    );
     let latestAutoStreams: Stream[] = [];
     let autoWaitExpired = playerSettings.autoPlayTimeoutSeconds === 0;
     let autoSelected = false;
     const scheduleAutoPlay = (available: Stream[], complete = false) => {
       latestAutoStreams = available;
-      if (forceManual || autoSelected || controller.signal.aborted || request !== sourceRequest.current || (!complete && !autoWaitExpired)) return;
+      if (forceManual || autoManual.current || autoSelected || controller.signal.aborted || request !== sourceRequest.current || (!complete && !autoWaitExpired)) return;
+      setAutoStage("choosing");
       const choice = selectAutoStream(available, playerSettings,
         addons.map((addon) => addon.manifest?.name || addon.name || ""), bingeGroupFor(meta.id));
-      if (!choice) return;
+      if (!choice) {
+        // Every addon has answered and nothing fits the autoplay rules: hand
+        // over to the list, and say why it is there.
+        if (complete) {
+          setAutoStage(null);
+          // With no sources at all the list already says so on its own.
+          setAutoMissed(available.length > 0);
+        }
+        return;
+      }
       autoSelected = true;
       window.clearTimeout(autoPlayTimer.current);
       setSourceOpen(false);
@@ -1746,7 +1783,19 @@ export function Details({
               </button>
             </header>
             {downloadNote && <div className="sheet-note">{downloadNote}</div>}
-            {sourceBusy ? (
+            {autoMissed && !autoStage && (
+              <div className="sheet-note">{t("autoplay.noMatch")}</div>
+            )}
+            {autoStage ? (
+              <AutoPlayProgress
+                stage={autoStage}
+                answered={answered.length}
+                total={sourceAddons.length}
+                found={streams.length}
+                deadline={autoDeadline}
+                onManual={chooseManually}
+              />
+            ) : sourceBusy ? (
               <div className="sheet-loading" role="status">
                 <i className="mini-spinner" aria-hidden="true" />
                 <span>{t("sources.fetching")}</span>
