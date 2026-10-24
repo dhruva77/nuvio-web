@@ -387,6 +387,16 @@ a {
 .media-section {
   margin: 24px 0 38px;
 }
+.home-shelf {
+  display: flow-root;
+  margin: 24px 0 38px;
+}
+.home-shelf > .media-section {
+  margin: 0;
+}
+.home-shelf-placeholder {
+  height: calc(var(--poster-height, 210px) + 110px);
+}
 .media-section header {
   display: flex;
   align-items: end;

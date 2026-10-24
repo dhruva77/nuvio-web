@@ -1,4 +1,6 @@
 import { ProfileGate } from "./components/ProfileGate";
+import { HomeShelf } from "./components/HomeShelf";
+import { profileForReload, profileSessionMarker, SESSION_PROFILE_KEY } from "./lib/profileSession";
 import { effectiveAddonProfileIndex } from "./lib/account";
 import { PinPrompt } from "./components/PinPrompt";
 import {
@@ -400,14 +402,9 @@ const DETAIL_SECTION_LABELS: Record<
 };
 
 
-/** The profile open in this tab, for coming back to it after a reload. */
-const SESSION_PROFILE_KEY = "nuvio-session-profile";
-
 function sessionProfile(profiles: Profile[]): Profile | undefined {
   try {
-    const stored = sessionStorage.getItem(SESSION_PROFILE_KEY);
-    if (stored === null) return undefined;
-    return profiles.find((item) => item.profileIndex === Number(stored));
+    return profileForReload(profiles, sessionStorage.getItem(SESSION_PROFILE_KEY));
   } catch {
     return undefined;
   }
@@ -743,7 +740,7 @@ export function App() {
     // that was open rather than to the picker. Not "remember profile": that
     // is about opening the app, and a reload is not an app open.
     try {
-      if (next) sessionStorage.setItem(SESSION_PROFILE_KEY, String(next.profileIndex));
+      if (next) sessionStorage.setItem(SESSION_PROFILE_KEY, profileSessionMarker(next));
       else sessionStorage.removeItem(SESSION_PROFILE_KEY);
     } catch {
       // Private browsing can refuse storage; the picker is the fallback.
@@ -953,8 +950,8 @@ export function App() {
         : undefined;
       const target =
         resumeProfile ??
-        (rememberProfileRef.current ? last : undefined) ??
-        sessionProfile(nextProfiles);
+        sessionProfile(nextProfiles) ??
+        (rememberProfileRef.current ? last : undefined);
       if (!autoOpenAttempted.current && target) {
         autoOpenAttempted.current = true;
         if (target.pinEnabled) setPinTarget(target);
@@ -2953,7 +2950,9 @@ function HomeView({
   onMenu(item: Meta, x: number, y: number): void;
   onContinueMenu(card: ContinueCard, x: number, y: number): void;
 }) {
-  const { visible } = useProgressiveList(rows, {
+  // The native shell retains its progressive rows and controller focus model.
+  // Browser rows instead remain as placeholders until near the viewport.
+  const { visible } = useProgressiveList(platform.player ? rows : [], {
     resetKey: "home",
     first: 3,
     chunk: 2,
@@ -2969,24 +2968,28 @@ function HomeView({
           onMenu={onContinueMenu}
         />
       )}
-      {visible.map((row) =>
-        row.kind === "collection" ? (
-          <CollectionRow
-            key={row.key}
-            collection={row.collection}
-            onOpenFolder={onOpenFolder}
-          />
-        ) : (
-          <MediaRow
-            key={row.key}
-            section={row.section}
-            index={index}
-            onOpen={onOpen}
-            onMenu={onMenu}
-            onSeeAll={() => onSeeAll(row.section)}
-          />
-        ),
-      )}
+      {(platform.player ? visible : rows).map((row) => (
+        <HomeShelf
+          key={row.key}
+          label={row.kind === "collection" ? row.collection.title : row.section.name}
+          enabled={!platform.player}
+        >
+          {row.kind === "collection" ? (
+            <CollectionRow
+              collection={row.collection}
+              onOpenFolder={onOpenFolder}
+            />
+          ) : (
+            <MediaRow
+              section={row.section}
+              index={index}
+              onOpen={onOpen}
+              onMenu={onMenu}
+              onSeeAll={() => onSeeAll(row.section)}
+            />
+          )}
+        </HomeShelf>
+      ))}
     </>
   );
 }
