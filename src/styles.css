@@ -1902,87 +1902,86 @@ a {
   justify-content: center;
   gap: 10px;
 }
-/* Autoplay choosing a source: steps rather than a list, so nothing looks
-   like it is waiting to be tapped. */
-.autoplay-progress {
-  display: grid;
-  gap: 18px;
-  max-width: 420px;
-  margin: 26px auto 0;
-  padding: 0 6px;
-}
-.autoplay-progress ol {
-  display: grid;
-  gap: 16px;
-  margin: 0;
+/* Autoplay is a full-screen artwork wait; manual selection retains the sheet. */
+.source-sheet.is-autoplay {
+  position: relative;
+  display: block;
   padding: 0;
-  list-style: none;
+  overflow: hidden;
+  background: var(--app-bg, #080a0d);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
-.autoplay-progress li {
-  display: grid;
-  grid-template-columns: 26px 1fr;
-  align-items: start;
-  gap: 12px;
-  transition: opacity 0.25s ease;
-}
-.autoplay-progress li.is-next {
-  opacity: 0.45;
-}
-.autoplay-progress li > span:last-child {
-  display: grid;
-  gap: 3px;
-}
-.autoplay-progress strong {
-  color: #e8ebef;
-  font-size: 15px;
-  font-weight: 650;
-}
-.autoplay-progress small {
-  color: #89939d;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-.autoplay-mark {
+.autoplay-progress {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1.5px solid var(--panel-border, #2a3038);
+  padding: max(76px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
+  isolation: isolate;
 }
-.autoplay-progress li.is-done .autoplay-mark {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-ink, #111);
+.autoplay-backdrop,
+.autoplay-progress::after {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
-.autoplay-progress li.is-active .autoplay-mark {
-  border-color: transparent;
+.autoplay-backdrop {
+  z-index: -2;
+  object-fit: cover;
+  object-position: center 25%;
 }
-.autoplay-mark svg {
-  width: 15px;
-  height: 15px;
+.autoplay-progress::after {
+  content: "";
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(0 0 0 / 30%), rgb(0 0 0 / 55%) 50%, rgb(0 0 0 / 78%));
+  pointer-events: none;
 }
-.autoplay-progress > p {
-  margin: 4px 0 0;
-  color: #b4bdc7;
-  font-size: 14px;
+.autoplay-content {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  width: min(100%, 440px);
   text-align: center;
 }
+.autoplay-content > p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 650;
+  text-shadow: 0 2px 14px rgb(0 0 0 / 65%);
+}
+.autoplay-content .mini-spinner {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+}
 .autoplay-manual {
-  justify-self: center;
-  min-height: 40px;
-  padding: 0 16px;
-  border: 1px solid var(--panel-border, #2a3038);
-  border-radius: 12px;
-  color: #c8d1db;
-  background: transparent;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 14px;
+  color: #f5f7fa;
+  background: rgb(0 0 0 / 25%);
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
 }
-.autoplay-manual:hover {
+.autoplay-manual:hover,
+.autoplay-manual:focus-visible {
   border-color: var(--accent);
-  color: #f7f8fa;
+  background: rgb(0 0 0 / 45%);
+}
+.autoplay-close {
+  position: absolute;
+  top: max(20px, env(safe-area-inset-top));
+  left: max(20px, env(safe-area-inset-left));
 }
 .source-list {
   display: grid;

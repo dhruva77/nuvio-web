@@ -606,7 +606,6 @@ export function Details({
   const autoPlayTimer = useRef<number | undefined>(undefined);
   /** Autoplay's progress while it is choosing; null once the list is shown. */
   const [autoStage, setAutoStage] = useState<AutoPlayStage | null>(null);
-  const [autoDeadline, setAutoDeadline] = useState<number | null>(null);
   /** Autoplay finished looking and nothing matched the rules. */
   const [autoMissed, setAutoMissed] = useState(false);
   /** "Choose a source myself": stops this run picking for you. */
@@ -1071,17 +1070,9 @@ export function Details({
     // Autoplay picks once every addon has answered even with no timer set;
     // the timer, when there is one, only lets it pick sooner.
     const autoplay = !forceManual && playerSettings.autoPlayMode !== "MANUAL";
-    const timed =
-      playerSettings.autoPlayTimeoutSeconds > 0 &&
-      playerSettings.autoPlayTimeoutSeconds < 2147483647;
     autoManual.current = false;
     setAutoMissed(false);
     setAutoStage(autoplay ? "finding" : null);
-    setAutoDeadline(
-      autoplay && timed
-        ? Date.now() + playerSettings.autoPlayTimeoutSeconds * 1000
-        : null,
-    );
     let latestAutoStreams: Stream[] = [];
     let autoWaitExpired = playerSettings.autoPlayTimeoutSeconds === 0;
     let autoSelected = false;
@@ -1681,7 +1672,7 @@ export function Details({
         >
           <section
             ref={sourceSwipeRef}
-            className="source-sheet"
+            className={`source-sheet${autoStage ? " is-autoplay" : ""}`}
             onClick={(event) => event.stopPropagation()}
             style={
               meta.background
@@ -1691,6 +1682,14 @@ export function Details({
                 : undefined
             }
           >
+            {autoStage ? (
+              <AutoPlayProgress
+                background={meta.background || meta.poster}
+                onManual={chooseManually}
+                onClose={closeSource}
+              />
+            ) : (
+            <>
             {/* What you are choosing a source for. Desktop only: on a phone the
                 list needs the whole screen, and the title bar above already
                 says which episode this is. */}
@@ -1786,16 +1785,7 @@ export function Details({
             {autoMissed && !autoStage && (
               <div className="sheet-note">{t("autoplay.noMatch")}</div>
             )}
-            {autoStage ? (
-              <AutoPlayProgress
-                stage={autoStage}
-                answered={answered.length}
-                total={sourceAddons.length}
-                found={streams.length}
-                deadline={autoDeadline}
-                onManual={chooseManually}
-              />
-            ) : sourceBusy ? (
+            {sourceBusy ? (
               <div className="sheet-loading" role="status">
                 <i className="mini-spinner" aria-hidden="true" />
                 <span>{t("sources.fetching")}</span>
@@ -1989,6 +1979,8 @@ export function Details({
               </div>
             )}
             </div>
+            </>
+            )}
           </section>
         </div>
       )}
